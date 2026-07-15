@@ -1,67 +1,127 @@
 const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    DisconnectReason,
-    fetchLatestBaileysVersion
+default: makeWASocket,
+useMultiFileAuthState,
+DisconnectReason,
+fetchLatestBaileysVersion
 } = require("@whiskeysockets/baileys");
 
+const axios = require("axios");
+
 async function startBot() {
-    const { state, saveCreds } =
-        await useMultiFileAuthState("./auth_info");
 
-    const { version } =
-        await fetchLatestBaileysVersion();
 
-    const sock = makeWASocket({
-        version,
-        auth: state,
-        printQRInTerminal: false,
-        browser: ["HusnanAI", "Chrome", "1.0.0"]
-    });
+const { state, saveCreds } =
+    await useMultiFileAuthState("./auth_info");
 
-    sock.ev.on("creds.update", saveCreds);
+const { version } =
+    await fetchLatestBaileysVersion();
 
-    if (!sock.authState.creds.registered) {
-        const phoneNumber = process.env.PHONE_NUMBER;
+const sock = makeWASocket({
+    version,
+    auth: state,
+    printQRInTerminal: false,
+    browser: ["HusnanAI", "Chrome", "1.0.0"]
+});
 
-        if (!phoneNumber) {
-            console.log("❌ PHONE_NUMBER belum diisi");
-            process.exit(1);
+sock.ev.on("creds.update", saveCreds);
+
+let pairingRequested = false;
+
+sock.ev.on("connection.update", async (update) => {
+
+    const {
+        connection,
+        lastDisconnect
+    } = update;
+
+    console.log("Connection Update:", connection);
+
+    if (
+        !sock.authState.creds.registered &&
+        !pairingRequested
+    ) {
+        pairingRequested = true;
+
+        try {
+
+            const phoneNumber =
+                process.env.PHONE_NUMBER;
+
+            if (!phoneNumber) {
+                console.log(
+                    "❌ PHONE_NUMBER belum diisi"
+                );
+                return;
+            }
+
+            await new Promise(resolve =>
+                setTimeout(resolve, 10000)
+            );
+
+            const code =
+                await sock.requestPairingCode(
+                    phoneNumber
+                );
+
+            console.log("");
+            console.log(
+                "================================="
+            );
+            console.log(
+                "PAIRING CODE:"
+            );
+            console.log(code);
+            console.log(
+                "================================="
+            );
+            console.log("");
+
+        } catch (err) {
+
+            pairingRequested = false;
+
+            console.error(
+                "❌ Pairing Error:",
+                err
+            );
         }
-
-        const code =
-            await sock.requestPairingCode(phoneNumber);
-
-        console.log("");
-        console.log("=================================");
-        console.log("PAIRING CODE:");
-        console.log(code);
-        console.log("=================================");
-        console.log("");
     }
 
-    sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+    if (connection === "open") {
+        console.log(
+            "✅ WhatsApp Connected"
+        );
+    }
 
-        if (connection === "open") {
-            console.log("✅ WhatsApp Connected");
-        }
+    if (connection === "close") {
 
-        if (connection === "close") {
-            const shouldReconnect =
-                lastDisconnect?.error?.output?.statusCode !==
-                DisconnectReason.loggedOut;
+        const shouldReconnect =
+            lastDisconnect?.error?.output?.statusCode !==
+            DisconnectReason.loggedOut;
 
-            console.log("🔄 Reconnecting...");
+        console.log(
+            "🔄 Connection Closed"
+        );
 
-            if (shouldReconnect) {
+        if (shouldReconnect) {
+
+            console.log(
+                "🔄 Reconnecting..."
+            );
+
+            setTimeout(() => {
                 startBot();
-            }
+            }, 5000);
         }
-    });
+    }
+});
 
-    sock.ev.on("messages.upsert", async ({ messages }) => {
+sock.ev.on(
+    "messages.upsert",
+    async ({ messages }) => {
+
         try {
+
             const msg = messages[0];
 
             if (!msg.message) return;
@@ -69,31 +129,42 @@ async function startBot() {
 
             const text =
                 msg.message.conversation ||
-                msg.message.extendedTextMessage?.text;
+                msg.message
+                    .extendedTextMessage
+                    ?.text;
 
             if (!text) return;
 
-            const axios = require("axios");
-
-            const res = await axios.post(
-                process.env.AI_API_URL || "http://127.0.0.1:5000/chat",
-                {
-                    user_id: msg.key.remoteJid,
-                    message: text
-                }
-            );
+            const response =
+                await axios.post(
+                    process.env.AI_API_URL ||
+                    "http://127.0.0.1:5000/chat",
+                    {
+                        user_id:
+                            msg.key.remoteJid,
+                        message: text
+                    }
+                );
 
             await sock.sendMessage(
                 msg.key.remoteJid,
                 {
-                    text: res.data.reply
+                    text:
+                        response.data.reply
                 }
             );
 
         } catch (err) {
-            console.error(err);
+
+            console.error(
+                "❌ Message Error:",
+                err
+            );
         }
-    });
+    }
+);
+
+
 }
 
 startBot();
