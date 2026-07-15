@@ -25,7 +25,7 @@ const sock = makeWASocket({
 
 sock.ev.on("creds.update", saveCreds);
 
-let pairingRequested = false;
+let pairingSent = false;
 
 sock.ev.on("connection.update", async (update) => {
 
@@ -34,13 +34,14 @@ sock.ev.on("connection.update", async (update) => {
         lastDisconnect
     } = update;
 
-    console.log("Connection Update:", connection);
+    console.log("Connection:", connection);
 
     if (
         !sock.authState.creds.registered &&
-        !pairingRequested
+        !pairingSent
     ) {
-        pairingRequested = true;
+
+        pairingSent = true;
 
         try {
 
@@ -55,7 +56,7 @@ sock.ev.on("connection.update", async (update) => {
             }
 
             await new Promise(resolve =>
-                setTimeout(resolve, 10000)
+                setTimeout(resolve, 15000)
             );
 
             const code =
@@ -64,24 +65,18 @@ sock.ev.on("connection.update", async (update) => {
                 );
 
             console.log("");
-            console.log(
-                "================================="
-            );
-            console.log(
-                "PAIRING CODE:"
-            );
+            console.log("===============");
+            console.log("PAIRING CODE");
             console.log(code);
-            console.log(
-                "================================="
-            );
+            console.log("===============");
             console.log("");
 
         } catch (err) {
 
-            pairingRequested = false;
+            pairingSent = false;
 
             console.error(
-                "❌ Pairing Error:",
+                "PAIRING ERROR:",
                 err
             );
         }
@@ -105,10 +100,6 @@ sock.ev.on("connection.update", async (update) => {
 
         if (shouldReconnect) {
 
-            console.log(
-                "🔄 Reconnecting..."
-            );
-
             setTimeout(() => {
                 startBot();
             }, 5000);
@@ -129,41 +120,37 @@ sock.ev.on(
 
             const text =
                 msg.message.conversation ||
-                msg.message
-                    .extendedTextMessage
-                    ?.text;
+                msg.message.extendedTextMessage?.text;
 
             if (!text) return;
 
-            const response =
-                await axios.post(
-                    process.env.AI_API_URL ||
-                    "http://127.0.0.1:5000/chat",
-                    {
-                        user_id:
-                            msg.key.remoteJid,
-                        message: text
-                    }
-                );
+            const res = await axios.post(
+                process.env.AI_API_URL ||
+                "http://127.0.0.1:5000/chat",
+                {
+                    user_id:
+                        msg.key.remoteJid,
+                    message: text
+                }
+            );
 
             await sock.sendMessage(
                 msg.key.remoteJid,
                 {
                     text:
-                        response.data.reply
+                        res.data.reply
                 }
             );
 
         } catch (err) {
 
             console.error(
-                "❌ Message Error:",
+                "MESSAGE ERROR:",
                 err
             );
         }
     }
 );
-
 
 }
 
