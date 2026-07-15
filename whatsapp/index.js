@@ -48,9 +48,7 @@ async function startBot() {
             try {
 
                 const phoneNumber =
-                    process.env.PHONE_NUMBER
-                        .replace(/\D/g, "")
-                        .replace(/^0/, "62");
+    process.env.PHONE_NUMBER.replace(/\D/g, "");
 
                 console.log(
                     "📱 Using number:",
