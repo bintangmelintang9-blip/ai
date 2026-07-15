@@ -51,14 +51,21 @@ async function startBot() {
             try {
 
                 const phoneNumber =
-                    process.env.PHONE_NUMBER;
+    process.env.PHONE_NUMBER
+        .replace(/\D/g, "")
+        .replace(/^0/, "62");
 
-                if (!phoneNumber) {
-                    console.log(
-                        "❌ PHONE_NUMBER belum diisi"
-                    );
-                    return;
-                }
+console.log(
+    "📱 Using number:",
+    phoneNumber
+);
+
+if (!phoneNumber) {
+    console.log(
+        "❌ PHONE_NUMBER belum diisi"
+    );
+    return;
+}
 
                 console.log(
                     "⏳ Menunggu pairing..."
@@ -84,12 +91,16 @@ async function startBot() {
 
                 pairingRequested = false;
 
-                console.error(
-                    "PAIRING ERROR:",
-                    err
-                );
-            }
-        }
+                console.error("PAIRING ERROR FULL:");
+console.error(err);
+console.error(err?.message);
+console.error(err?.stack);
+
+try {
+    console.error(
+        JSON.stringify(err, null, 2)
+    );
+} catch {}
 
         if (connection === "open") {
 
