@@ -38,6 +38,11 @@ async function startBot() {
 
         console.log("Connection:", connection);
 
+        console.log(
+            "Registered:",
+            sock.authState.creds.registered
+        );
+
         if (
             !sock.authState.creds.registered &&
             !pairingRequested
@@ -48,7 +53,8 @@ async function startBot() {
             try {
 
                 const phoneNumber =
-    process.env.PHONE_NUMBER.replace(/\D/g, "");
+                    process.env.PHONE_NUMBER
+                        .replace(/\D/g, "");
 
                 console.log(
                     "📱 Using number:",
@@ -89,6 +95,7 @@ async function startBot() {
                 console.error(
                     "PAIRING ERROR FULL:"
                 );
+
                 console.error(err);
                 console.error(err?.message);
                 console.error(err?.stack);
@@ -109,6 +116,11 @@ async function startBot() {
 
             console.log(
                 "✅ WhatsApp Connected"
+            );
+
+            console.log(
+                "Registered:",
+                sock.authState.creds.registered
             );
         }
 
@@ -148,6 +160,11 @@ async function startBot() {
 
                 if (!text) return;
 
+                console.log(
+                    "📩 Message:",
+                    text
+                );
+
                 const res = await axios.post(
                     process.env.AI_API_URL ||
                     "http://127.0.0.1:5000/chat",
@@ -162,16 +179,18 @@ async function startBot() {
                     msg.key.remoteJid,
                     {
                         text:
-                            res.data.reply
+                            res.data.reply ||
+                            "Maaf terjadi kesalahan."
                     }
                 );
 
             } catch (err) {
 
                 console.error(
-                    "MESSAGE ERROR:",
-                    err
+                    "MESSAGE ERROR:"
                 );
+
+                console.error(err);
             }
         }
     );
