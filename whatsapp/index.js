@@ -15,7 +15,26 @@ const { state, saveCreds } =
 
 const { version } =
     await fetchLatestBaileysVersion();
+async function startBot() {
 
+    console.log("=== START BOT CALLED ===");
+
+    const { state, saveCreds } =
+        await useMultiFileAuthState("./auth_info");
+
+    console.log("=== AUTH LOADED ===");
+
+    const { version } =
+        await fetchLatestBaileysVersion();
+
+    console.log("=== LOADING BAILEYS ===");
+
+    const sock = makeWASocket({
+        version,
+        auth: state,
+        printQRInTerminal: false,
+        browser: ["HusnanAI", "Chrome", "1.0.0"]
+    });
 const sock = makeWASocket({
     version,
     auth: state,
