@@ -29,23 +29,38 @@ async function startBot() {
             process.exit(1);
         }
 
-        const code =
-            await sock.requestPairingCode(phoneNumber);
+        if (!sock.authState.creds.registered) {
 
-        console.log("");
-        console.log("=================================");
-        console.log("PAIRING CODE:");
-        console.log(code);
-        console.log("=================================");
-        console.log("");
+    const phoneNumber = process.env.PHONE_NUMBER;
+
+    if (!phoneNumber) {
+        throw new Error("PHONE_NUMBER belum diisi");
     }
 
-    sock.ev.on("connection.update", async (update) => {
-        const { connection, lastDisconnect } = update;
+    setTimeout(async () => {
+        try {
+            const code =
+                await sock.requestPairingCode(phoneNumber);
 
-        if (connection === "open") {
-            console.log("✅ WhatsApp Connected");
+            console.log("=================================");
+            console.log("PAIRING CODE:", code);
+            console.log("=================================");
+        } catch (err) {
+            console.error("PAIRING ERROR:", err);
         }
+    }, 10000);
+}
+
+    sock.ev.on("connection.update", async (update) => {
+
+    const { connection } = update;
+
+    console.log(update);
+
+    if (connection === "open") {
+        console.log("✅ WhatsApp Connected");
+    }
+});
 
         if (connection === "close") {
             const shouldReconnect =
