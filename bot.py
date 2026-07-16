@@ -1,3 +1,6 @@
+import os
+import threading
+from flask import Flask
 
 # Tambahkan fungsi ini sebelum threading.Thread(...).start()
 
