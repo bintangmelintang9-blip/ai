@@ -397,13 +397,9 @@ User: {text}
     })
 
 
-def run_api():
-    api.run(
-        host="0.0.0.0",
-        port=5000,
-        threaded=True
-    )
-
+# ==========================
+# START FLASK API
+# ==========================
 
 threading.Thread(
     target=run_api,
@@ -412,71 +408,73 @@ threading.Thread(
 
 print("✅ HusnanAi V5 Online")
 
-
 # ==========================
 # TELEGRAM OPTIONAL
 # ==========================
 
-if BOT_TOKEN:
+if BOT_TOKEN and ":" in BOT_TOKEN:
 
-    tg_app = Application.builder() \
+    app = Application.builder() \
         .token(BOT_TOKEN) \
         .build()
 
-    tg_app.add_handler(CommandHandler("start", start))
-    tg_app.add_handler(CommandHandler("about", about))
-    tg_app.add_handler(CommandHandler("stats", stats))
-    tg_app.add_handler(CommandHandler("reset", reset))
-    tg_app.add_handler(CommandHandler("menu", menu))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("about", about))
+    app.add_handler(CommandHandler("stats", stats))
+    app.add_handler(CommandHandler("reset", reset))
+    app.add_handler(CommandHandler("menu", menu))
 
-    tg_app.add_handler(
+    app.add_handler(
         MessageHandler(
             filters.PHOTO,
             photo_handler
         )
     )
 
-    tg_app.add_handler(
+    app.add_handler(
         MessageHandler(
             filters.VIDEO,
             video_handler
         )
     )
 
-    tg_app.add_handler(
+    app.add_handler(
         MessageHandler(
             filters.VOICE,
             voice_handler
         )
     )
 
-    tg_app.add_handler(
+    app.add_handler(
         MessageHandler(
             filters.Document.ALL,
             document_handler
         )
     )
 
-    tg_app.add_handler(
+    app.add_handler(
         MessageHandler(
             filters.LOCATION,
             location_handler
         )
     )
 
-    tg_app.add_handler(
+    app.add_handler(
         MessageHandler(
             filters.TEXT & ~filters.COMMAND,
             chat
         )
     )
 
-    tg_app.run_polling()
+    app.add_error_handler(error_handler)
+
+    print("🤖 Telegram Enabled")
+
+    app.run_polling()
 
 else:
 
-    print("⚠️ BOT_TOKEN tidak diisi")
-    print("⚠️ Telegram dinonaktifkan")
+    print("⚠️ Telegram Disabled")
 
     while True:
         time.sleep(60)
