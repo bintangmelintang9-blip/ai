@@ -396,6 +396,8 @@ User: {text}
         "reply": answer
     })
 
+def run_api():
+    api.run(host="0.0.0.0", port=5000)
 
 # ==========================
 # START FLASK API
