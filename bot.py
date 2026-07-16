@@ -1,16 +1,16 @@
 import os
-import threading
 from flask import Flask
 
-# Tambahkan fungsi ini sebelum threading.Thread(...).start()
+api = Flask(__name__)
 
-def run_api():
+@api.route("/")
+def home():
+    return {"status": "online"}
+
+if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    api.run(host="0.0.0.0", port=port, debug=False)
-
-# Ganti bagian START FLASK API menjadi:
-
-threading.Thread(
-    target=run_api,
-    daemon=True
-).start()
+    api.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
