@@ -354,40 +354,18 @@ async def error_handler(update, context):
 # APP
 # ==========================
 
-app = Application.builder().token(BOT_TOKEN).build()
-
-app.add_handler(CommandHandler("start", start))
-app.add_handler(CommandHandler("about", about))
-app.add_handler(CommandHandler("stats", stats))
-app.add_handler(CommandHandler("reset", reset))
-app.add_handler(CommandHandler("menu", menu))
-
-app.add_handler(MessageHandler(filters.PHOTO, photo_handler))
-app.add_handler(MessageHandler(filters.VIDEO, video_handler))
-app.add_handler(MessageHandler(filters.VOICE, voice_handler))
-app.add_handler(MessageHandler(filters.Document.ALL, document_handler))
-app.add_handler(MessageHandler(filters.LOCATION, location_handler))
-
-app.add_handler(
-    MessageHandler(
-        filters.TEXT & ~filters.COMMAND,
-        chat
-    )
-)
-
-app.add_error_handler(error_handler)
-
-
 # ==========================
 # WHATSAPP API
 # ==========================
+
 api = Flask(__name__)
 
 @api.route("/chat", methods=["POST"])
 def wa_chat():
     data = request.json or {}
+
     uid = str(data.get("user_id"))
-    text = data.get("message","")
+    text = data.get("message", "")
 
     save_memory(uid, "user", text)
     history = get_memory(uid)
@@ -400,21 +378,105 @@ Riwayat:
 
 User: {text}
 """
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt
-    )
 
-    answer = response.text
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+
+        answer = response.text
+
+    except Exception as e:
+        answer = f"Error AI: {str(e)}"
+
     save_memory(uid, "assistant", answer)
-    return jsonify({"reply": answer})
+
+    return jsonify({
+        "reply": answer
+    })
+
 
 def run_api():
-    api.run(host="0.0.0.0", port=5000)
+    api.run(
+        host="0.0.0.0",
+        port=5000,
+        threaded=True
+    )
 
-threading.Thread(target=run_api, daemon=True).start()
 
+threading.Thread(
+    target=run_api,
+    daemon=True
+).start()
 
 print("✅ HusnanAi V5 Online")
 
-app.run_polling()
+
+# ==========================
+# TELEGRAM OPTIONAL
+# ==========================
+
+if BOT_TOKEN:
+
+    tg_app = Application.builder() \
+        .token(BOT_TOKEN) \
+        .build()
+
+    tg_app.add_handler(CommandHandler("start", start))
+    tg_app.add_handler(CommandHandler("about", about))
+    tg_app.add_handler(CommandHandler("stats", stats))
+    tg_app.add_handler(CommandHandler("reset", reset))
+    tg_app.add_handler(CommandHandler("menu", menu))
+
+    tg_app.add_handler(
+        MessageHandler(
+            filters.PHOTO,
+            photo_handler
+        )
+    )
+
+    tg_app.add_handler(
+        MessageHandler(
+            filters.VIDEO,
+            video_handler
+        )
+    )
+
+    tg_app.add_handler(
+        MessageHandler(
+            filters.VOICE,
+            voice_handler
+        )
+    )
+
+    tg_app.add_handler(
+        MessageHandler(
+            filters.Document.ALL,
+            document_handler
+        )
+    )
+
+    tg_app.add_handler(
+        MessageHandler(
+            filters.LOCATION,
+            location_handler
+        )
+    )
+
+    tg_app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            chat
+        )
+    )
+
+    tg_app.run_polling()
+
+else:
+
+    print("⚠️ BOT_TOKEN tidak diisi")
+    print("⚠️ Telegram dinonaktifkan")
+
+    while True:
+        time.sleep(60)
