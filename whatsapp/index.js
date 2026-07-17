@@ -47,15 +47,7 @@ async function startBot() {
                     lastDisconnect
                 } = update;
 
-                console.log(
-                    "Connection:",
-                    connection
-                );
-
-                console.log(
-                    "Registered:",
-                    sock.authState.creds.registered
-                );
+                console.log("Connection:", connection);
 
                 if (
                     !sock.authState.creds.registered &&
@@ -67,87 +59,46 @@ async function startBot() {
                     try {
 
                         const phoneNumber =
-                            process.env.PHONE_NUMBER
-                                .replace(/\D/g, "");
-
-                        console.log(
-                            "📱 Using number:",
-                            phoneNumber
-                        );
+                            process.env.PHONE_NUMBER?.replace(/\D/g, "");
 
                         if (!phoneNumber) {
-
-                            console.log(
-                                "❌ PHONE_NUMBER belum diisi"
-                            );
-
+                            console.log("❌ PHONE_NUMBER belum diisi");
                             return;
                         }
 
-                        console.log(
-                            "⏳ Menunggu pairing..."
-                        );
+                        console.log("📱 Using number:", phoneNumber);
+                        console.log("⏳ Menunggu pairing...");
 
                         await new Promise(
-                            resolve =>
-                                setTimeout(
-                                    resolve,
-                                    15000
-                                )
+                            resolve => setTimeout(resolve, 15000)
                         );
 
                         const code =
-                            await sock.requestPairingCode(
-                                phoneNumber
-                            );
+                            await sock.requestPairingCode(phoneNumber);
 
-                        console.log("");
-                        console.log(
-                            "===================="
-                        );
-                        console.log(
-                            "PAIRING CODE:"
-                        );
+                        console.log("\n====================");
+                        console.log("PAIRING CODE:");
                         console.log(code);
-                        console.log(
-                            "===================="
-                        );
-                        console.log("");
+                        console.log("====================\n");
 
                     } catch (err) {
 
                         pairingRequested = false;
 
-                        console.error(
-                            "PAIRING ERROR:"
-                        );
-
+                        console.error("PAIRING ERROR:");
                         console.error(err);
                     }
                 }
 
-                if (
-                    connection === "open"
-                ) {
+                if (connection === "open") {
 
-                    console.log(
-                        "✅ WhatsApp Connected"
-                    );
-
-                    console.log(
-                        "Registered:",
-                        sock.authState.creds.registered
-                    );
+                    console.log("✅ WhatsApp Connected");
                 }
 
-                if (
-                    connection === "close"
-                ) {
+                if (connection === "close") {
 
                     const statusCode =
-                        lastDisconnect?.error
-                            ?.output
-                            ?.statusCode;
+                        lastDisconnect?.error?.output?.statusCode;
 
                     console.log(
                         "🔄 Connection Closed:",
@@ -155,21 +106,14 @@ async function startBot() {
                     );
 
                     const shouldReconnect =
-                        statusCode !==
-                        DisconnectReason.loggedOut;
+                        statusCode !== DisconnectReason.loggedOut;
 
-                    if (
-                        shouldReconnect
-                    ) {
+                    if (shouldReconnect) {
 
-                        console.log(
-                            "♻️ Reconnecting..."
-                        );
+                        console.log("♻️ Reconnecting...");
 
                         setTimeout(
-                            () => {
-                                startBot();
-                            },
+                            () => startBot(),
                             5000
                         );
                     }
@@ -183,47 +127,45 @@ async function startBot() {
 
                 try {
 
-                    const msg =
-                        messages?.[0];
+                    const msg = messages?.[0];
 
                     if (!msg) return;
                     if (!msg.message) return;
-                    if (msg.key.fromMe)
-                        return;
+                    if (msg.key.fromMe) return;
 
                     const text =
-                        msg.message
-                            .conversation ||
-                        msg.message
-                            .extendedTextMessage
-                            ?.text;
+                        msg.message.conversation ||
+                        msg.message.extendedTextMessage?.text;
 
                     if (!text) return;
 
-                    console.log(
-                        "📩 Message:",
-                        text
-                    );
+                    console.log("📩 Message:", text);
 
                     const aiUrl =
-                        process.env.AI_API_URL ||
-                        "http://127.0.0.1:5000/chat";
+                        process.env.AI_API_URL;
+
+                    if (!aiUrl) {
+                        throw new Error(
+                            "AI_API_URL belum diisi"
+                        );
+                    }
 
                     const response =
-                        const API_URL = process.env.API_URL || "http://127.0.0.1:8080";
-
-await axios.post(`${API_URL}/chat`, {
-    user_id,
-    message
-});
+                        await axios.post(
+                            aiUrl,
+                            {
+                                user_id:
+                                    msg.key.remoteJid,
+                                message:
+                                    text
+                            },
                             {
                                 timeout: 60000
                             }
                         );
 
                     const reply =
-                        response?.data
-                            ?.reply ||
+                        response?.data?.reply ||
                         "Maaf, AI tidak memberikan jawaban.";
 
                     await sock.sendMessage(
@@ -265,9 +207,7 @@ await axios.post(`${API_URL}/chat`, {
         console.error(err);
 
         setTimeout(
-            () => {
-                startBot();
-            },
+            () => startBot(),
             10000
         );
     }
