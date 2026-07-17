@@ -210,14 +210,12 @@ async function startBot() {
                         "http://127.0.0.1:5000/chat";
 
                     const response =
-                        await axios.post(
-                            aiUrl,
-                            {
-                                user_id:
-                                    msg.key.remoteJid,
-                                message:
-                                    text
-                            },
+                        const API_URL = process.env.API_URL || "http://127.0.0.1:8080";
+
+await axios.post(`${API_URL}/chat`, {
+    user_id,
+    message
+});
                             {
                                 timeout: 60000
                             }
